@@ -319,11 +319,11 @@ prepare_msg(int *fds,
             uint32_t num_fds)
 {
   static char iobuf[1];
-  struct cmsghdr *cmsg;
   static struct iovec io = {
     .iov_base = iobuf,
     .iov_len = sizeof(iobuf)
   };
+  struct cmsghdr *cmsg;
   static union {         /* Ancillary data buffer, wrapped in a union
                             in order to ensure it is suitably aligned */
     char buf[0];
@@ -339,14 +339,22 @@ prepare_msg(int *fds,
   }
   
          
-  /* Setup the message */
+  /* Setup the application-specific payload of message
+   * Remember that from the point of view of the kernel, this payload is
+   * completely application specific and NOT related  to the control
+   * (ancillary) SCM_RIGHTS message
+   * However we still need this to be non-zero. I think this is to make
+   * sendmsg() and recvmsg() work (but I am not sure)
+   */
   memset(msg, 0, sizeof(*msg));
   msg->msg_iov = &io;
   msg->msg_iovlen = 1;
+
+  /* Setup the control messaage (ancillary data) info inside "msg" */
   msg->msg_control = u->buf;
   msg->msg_controllen = size;
 
-  /* Setup the control message */
+  /* populate the control message (ancillary data)  */
   cmsg = CMSG_FIRSTHDR(msg);
   cmsg->cmsg_level = SOL_SOCKET;
   cmsg->cmsg_type = SCM_RIGHTS;
@@ -419,7 +427,7 @@ recev_fds(int sock, int *fds, uint32_t num_fds)
               cmsg,
               fdptr);
   }
-  /* Free mem we4 allocated in prepare(msg */
+  /* Free mem we allocated for the control message when calling prepare(msg) */
   free(msg.msg_control);
   return (j);
 }
@@ -445,11 +453,12 @@ send_fds(int sock, int *fds, uint32_t num_fds)
               &cmsg,
               num_fds);
 
-  /* Get a pointer to the payload */
+  /* Get a pointer to the ancillary data payload */
   fdptr = (int *) CMSG_DATA(cmsg);
-  /* Copy the fds into the msg */
+  /* Copy the fds into the ancillary data payload  */
   memcpy(fdptr, fds, num_fds * sizeof(*fds));
-  ssize_t j = sendmsg(sock, &msg, 0); /* send the SCM_RIGHTS message */
+  /* send the msg containing SCM_RIGHTS message */
+  ssize_t j = sendmsg(sock, &msg, 0);
   if (j < 0) {
     PRINT_ERR("FAILED send_fds() to fd %d for %u fds "
               "msg.msg_iovlen=%u, msg.msg_controllen=%u "
@@ -465,7 +474,7 @@ send_fds(int sock, int *fds, uint32_t num_fds)
               (uint32_t)cmsg->cmsg_len,
               errno, strerror(errno));
   } else {
-    PRINT_ERR("SUCCESS send_fds() sent %zd bytes to fd %d for %u fds\n "
+    PRINT_DEBUG("SUCCESS send_fds() sent %zd bytes to fd %d for %u fds\n "
               "\tmsg.msg_iovlen=%zu\n "
               "\tmsg.msg_controllen=%zu \n"
               "\tcmsg->cmsg_level=%u\n"
@@ -484,9 +493,8 @@ send_fds(int sock, int *fds, uint32_t num_fds)
               &msg,
               cmsg,
               fdptr);
-    
   }
-  /* Free mem we4 allocated in prepare(msg */
+  /* Free mem we allocated for the control message when calling prepare(msg) */
   free(msg.msg_control);
   return (j);
 }
