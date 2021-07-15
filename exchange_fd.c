@@ -1,8 +1,8 @@
 /*
  *
- * ISC License
+ * ISC License  (ISC)
  * 
- * Copyright (c) Ahmed Bashandy
+ * Copyright (c) 2021 Ahmed Bashandy
  * 
  * Permission to use, copy, modify, and/or distribute this software 
  * for any purpose with or without fee is hereby granted, provided 
@@ -17,8 +17,6 @@
  * LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, 
  * NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN      
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. 
- *
- * I.E USE IT AS YOU WISH BUT DO OT BLAME ANYONE FOR FOR ANYTHING
  *
  * What is this code
  * ================
