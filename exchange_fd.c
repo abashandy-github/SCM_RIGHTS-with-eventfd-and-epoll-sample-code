@@ -626,6 +626,7 @@ main (int    argc,
      * - send SCM_RIGHTS message containing the eventfd file descriptor
      */
     for (i = 0; i < num_clients; i++) {
+      remote_len = sizeof(sockaddr_remote);
       if ((server_accept_fd[i] = accept(sock_fd,
                                         (struct sockaddr *)&sockaddr_remote,
                                         &remote_len)) == -1) {
